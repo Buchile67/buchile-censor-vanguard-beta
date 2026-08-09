@@ -1,0 +1,6 @@
+streamlit>=1.49,<2
+streamlit-image-coordinates>=0.4,<1
+ultralytics>=8.3,<9
+opencv-python>=4.10,<5
+pillow>=10,<13
+numpy>=1.26,<3

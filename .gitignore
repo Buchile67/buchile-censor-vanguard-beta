@@ -1,0 +1,13 @@
+.conda/
+miniconda/
+__pycache__/
+*.pyc
+*.log
+.streamlit/
+outputs/
+assets/default_sticker.png
+models/*.pt
+checkpoints/*.pt
+!models/README.md
+!checkpoints/README.md
+*.zip
