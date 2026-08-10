@@ -35,7 +35,9 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 
 ### 安装与启动
 方式一：
-一键包：从 [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases) 下载完整包，解压后双击 `start_vanguard_beta.bat`。首次启动会在程序目录中准备独立的 Miniconda 与 `.conda` 环境，不会修改基础版环境。
+一键包：从 [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases) 下载包含模型、SAM 2.1 与 Miniconda 安装包的完整包，解压后双击 `start_vanguard_beta.bat`。无需预先安装 Python 或 Miniconda；首次启动按提示输入 `Y` 后，程序会安装一套不影响系统 Python 的私有运行环境，再自动安装所需依赖。请保持网络畅通和窗口开启，并预留约 10 GB 磁盘空间；先锋版依赖较大，第一次安装时间会比基础版更长。
+
+基础版和先锋版共用 `%LOCALAPPDATA%\BuchileRuntime\miniconda`，但使用彼此独立的 Python 环境，不会互相覆盖。旧版已经创建的 `.conda` 也会继续优先使用。
 
 方式二：
 从源码运行：（无代码基础不推荐）
@@ -45,7 +47,9 @@ git clone --recurse-submodules https://github.com/Buchile67/buchile-censor-vangu
 cd buchile-censor-vanguard-beta
 ```
 
-按照 [`models/README.md`](models/README.md) 和 [`checkpoints/README.md`](checkpoints/README.md) 放置模型，然后运行 `start_vanguard_beta.bat`。
+按照 [`models/README.md`](models/README.md) 和 [`checkpoints/README.md`](checkpoints/README.md) 放置模型，然后运行 `start_vanguard_beta.bat`。源码仓库不包含体积较大的 Miniconda 安装程序，首次启动会从官方地址下载并校验它。
+
+如果安装中断，请重新运行启动脚本。安装器不会覆盖已有的完整环境；如仍失败，请复制命令窗口中的完整错误信息。Miniconda 文件来源、校验值和许可说明见 [`installer/README.md`](installer/README.md)。
 
 ## English
 
@@ -65,16 +69,20 @@ cd buchile-censor-vanguard-beta
 
 ### Setup
 
-Download the complete package from [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases), extract it, and run `start_vanguard_beta.bat`. The first launch prepares an isolated Miniconda installation and `.conda` environment inside the application folder without modifying the base edition.
+**Method 1 — release package:** Download the complete package with models, SAM 2.1, and the Miniconda installer from [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases), extract it, and run `start_vanguard_beta.bat`. No prior Python or Miniconda installation is required. On first launch, type `Y` when prompted; setup creates a private runtime without changing the system Python, then installs the dependencies automatically. Keep the network connected and the window open, and allow about 10 GB of free disk space. Vanguard has larger dependencies, so its first setup takes longer than the base edition.
 
-To run from source:
+The base and Vanguard editions share `%LOCALAPPDATA%\BuchileRuntime\miniconda` but use separate Python environments. An existing legacy `.conda` remains supported and takes priority.
+
+**Method 2 — source (not recommended for users without coding experience):**
 
 ```powershell
 git clone --recurse-submodules https://github.com/Buchile67/buchile-censor-vanguard-beta.git
 cd buchile-censor-vanguard-beta
 ```
 
-Place the files described in [`models/README.md`](models/README.md) and [`checkpoints/README.md`](checkpoints/README.md), then run `start_vanguard_beta.bat`.
+Place the files described in [`models/README.md`](models/README.md) and [`checkpoints/README.md`](checkpoints/README.md), then run `start_vanguard_beta.bat`. A source checkout does not include the large Miniconda installer, so the first launch downloads and verifies it from the official source.
+
+If setup is interrupted, run the launcher again. Existing complete environments are not overwritten. If it still fails, copy the full console output when requesting help. See [`installer/README.md`](installer/README.md) for the installer source, checksum, and license notice.
 
 ## Models and references / 模型与参考项目
 

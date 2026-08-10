@@ -11,3 +11,4 @@ checkpoints/*.pt
 !models/README.md
 !checkpoints/README.md
 *.zip
+installer/*.exe
