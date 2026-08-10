@@ -23,12 +23,12 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 
 ### 安装与启动
 
-从 [Releases](https://github.com/themedark23-oss/buchile-censor-vanguard-beta/releases) 下载完整包，解压后双击 `start_vanguard_beta.bat`。首次启动会在程序目录中准备独立的 Miniconda 与 `.conda` 环境，不会修改基础版环境。
+从 [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases) 下载完整包，解压后双击 `start_vanguard_beta.bat`。首次启动会在程序目录中准备独立的 Miniconda 与 `.conda` 环境，不会修改基础版环境。
 
 从源码运行：
 
 ```powershell
-git clone --recurse-submodules https://github.com/themedark23-oss/buchile-censor-vanguard-beta.git
+git clone --recurse-submodules https://github.com/Buchile67/buchile-censor-vanguard-beta.git
 cd buchile-censor-vanguard-beta
 ```
 
@@ -49,12 +49,12 @@ cd buchile-censor-vanguard-beta
 
 ### Setup
 
-Download the complete package from [Releases](https://github.com/themedark23-oss/buchile-censor-vanguard-beta/releases), extract it, and run `start_vanguard_beta.bat`. The first launch prepares an isolated Miniconda installation and `.conda` environment inside the application folder without modifying the base edition.
+Download the complete package from [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases), extract it, and run `start_vanguard_beta.bat`. The first launch prepares an isolated Miniconda installation and `.conda` environment inside the application folder without modifying the base edition.
 
 To run from source:
 
 ```powershell
-git clone --recurse-submodules https://github.com/themedark23-oss/buchile-censor-vanguard-beta.git
+git clone --recurse-submodules https://github.com/Buchile67/buchile-censor-vanguard-beta.git
 cd buchile-censor-vanguard-beta
 ```
 
@@ -62,7 +62,7 @@ Place the files described in [`models/README.md`](models/README.md) and [`checkp
 
 ## Models and references / 模型与参考项目
 
-- [Buchile Censor base edition / 基础版](https://github.com/themedark23-oss/buchile-censor)
+- [Buchile Censor base edition / 基础版](https://github.com/Buchile67/buchile-censor)
 - [Meta Segment Anything 2](https://github.com/facebookresearch/sam2) — SAM 2.1 source and refinement models.
 - [frinkleko/AutoHajimiMosaic](https://github.com/frinkleko/AutoHajimiMosaic) — interaction and segmentation workflow.
 - [spawner1145/auto-censor](https://github.com/spawner1145/auto-censor) — processing workflow and extensions.
@@ -81,7 +81,7 @@ Only process files you own or are authorized to edit. Do not use this tool for i
 
 ## Buchile
 
-- GitHub: [Buchile](https://github.com/themedark23-oss)
+- GitHub: [Buchile](https://github.com/Buchile67)
 - Pixiv: [Buchile](https://www.pixiv.net/en/users/118035672)
 
 ## License / 许可证
