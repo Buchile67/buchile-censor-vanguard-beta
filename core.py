@@ -232,14 +232,23 @@ def _pixelated_crop(crop: np.ndarray, block_size: int) -> np.ndarray:
     return cv2.resize(small, (width, height), interpolation=cv2.INTER_NEAREST)
 
 
-def _sticker_effect(crop: np.ndarray, sticker_rgba: np.ndarray, block_size: int) -> np.ndarray:
+def _sticker_effect(crop: np.ndarray, sticker_rgba: np.ndarray) -> np.ndarray:
     height, width = crop.shape[:2]
     sticker = cv2.resize(sticker_rgba, (width, height), interpolation=cv2.INTER_AREA)
     sticker_rgb = sticker[:, :, :3].astype(np.float32)
     sticker_alpha = sticker[:, :, 3:4].astype(np.float32) / 255.0
-    # Transparent sticker pixels fall back to a real pixel mosaic, so coverage remains complete.
-    fallback = _pixelated_crop(crop, block_size).astype(np.float32)
-    return np.clip(sticker_rgb * sticker_alpha + fallback * (1.0 - sticker_alpha), 0, 255).astype(np.uint8)
+    visible = sticker_alpha[:, :, 0] > 0.02
+    if np.any(visible):
+        background = np.median(sticker_rgb[visible], axis=0).reshape(1, 1, 3)
+    else:
+        background = np.full((1, 1, 3), 32.0, dtype=np.float32)
+    # Build an opaque sticker canvas. Transparent margins use a color sampled from
+    # the sticker itself, so sticker mode never exposes the original or pixel mosaic.
+    return np.clip(
+        sticker_rgb * sticker_alpha + background * (1.0 - sticker_alpha),
+        0,
+        255,
+    ).astype(np.uint8)
 
 
 def _inside_only_alpha(mask_crop: np.ndarray, feather: int) -> np.ndarray:
@@ -270,11 +279,12 @@ def apply_censor(
             continue
         crop = output[y1:y2, x1:x2]
         mask_crop = detection.mask[y1:y2, x1:x2]
-        if mode == "sticker" and sticker_rgba is not None:
-            effect = _sticker_effect(crop, sticker_rgba, block_size)
+        sticker_mode = mode == "sticker" and sticker_rgba is not None
+        if sticker_mode:
+            effect = _sticker_effect(crop, sticker_rgba)
         else:
             effect = _pixelated_crop(crop, block_size)
-        alpha = _inside_only_alpha(mask_crop, feather)
+        alpha = _inside_only_alpha(mask_crop, 0 if sticker_mode else feather)
         blended = effect.astype(np.float32) * alpha + crop.astype(np.float32) * (1.0 - alpha)
         output[y1:y2, x1:x2] = np.clip(blended, 0, 255).astype(np.uint8)
     return output
@@ -283,3 +293,43 @@ def apply_censor(
 def detections_for_parts(detections: Iterable[Detection], selected_parts: Iterable[str]) -> list[Detection]:
     selected = set(selected_parts)
     return [item for item in detections if item.part in selected]
+
+
+def draw_detection_markers(
+    image_rgb: np.ndarray,
+    detections: Iterable[Detection],
+) -> np.ndarray:
+    output = image_rgb.copy()
+    height, width = output.shape[:2]
+    radius = int(np.clip(round(min(height, width) * 0.018), 11, 28))
+    font_scale = max(0.45, radius / 20.0)
+    thickness = max(1, round(radius / 9))
+    for index, detection in enumerate(detections, 1):
+        binary = (detection.mask > 0).astype(np.uint8)
+        if binary.shape != (height, width):
+            binary = cv2.resize(binary, (width, height), interpolation=cv2.INTER_NEAREST)
+        distance = cv2.distanceTransform(binary, cv2.DIST_L2, 5)
+        _, maximum, _, location = cv2.minMaxLoc(distance)
+        if maximum <= 0:
+            x1, y1, x2, y2 = detection.bbox
+            location = ((x1 + x2) // 2, (y1 + y2) // 2)
+        x = int(np.clip(location[0], radius + 2, max(radius + 2, width - radius - 3)))
+        y = int(np.clip(location[1], radius + 2, max(radius + 2, height - radius - 3)))
+        cv2.circle(output, (x, y), radius + 2, (255, 255, 255), -1, cv2.LINE_AA)
+        cv2.circle(output, (x, y), radius, (220, 35, 45), -1, cv2.LINE_AA)
+        text = str(index)
+        (text_width, text_height), baseline = cv2.getTextSize(
+            text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness
+        )
+        origin = (x - text_width // 2, y + (text_height - baseline) // 2)
+        cv2.putText(
+            output,
+            text,
+            origin,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            font_scale,
+            (255, 255, 255),
+            thickness,
+            cv2.LINE_AA,
+        )
+    return output

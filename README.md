@@ -26,8 +26,10 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 - **交互式精修**：通过包含点和排除点修正目标边界。
 - **CPU / GPU 选择**：支持自动选择、NVIDIA GPU 或 CPU 运行。
 - **两种 SAM 2.1 模型**：Tiny 侧重速度，Base Plus 侧重精度。
+- **独立识别参数**：识别阈值、补检参数和推理尺寸可应用到当前图片或全部图片。
 - **独立参数**：支持按图片、按区域类型保存不同的马赛克设置。
-- **遮挡方式**：支持像素马赛克、内置贴图与自定义贴图。
+- **预览序号**：可在预览中显示区域序号，且不会写入导出文件。
+- **遮挡方式**：支持像素马赛克、内置贴图与自定义贴图；贴图模式不会叠加像素马赛克。
 - **批量导出**：支持多图处理及 ZIP 导出。
 
 ### 安装与启动
@@ -52,8 +54,10 @@ cd buchile-censor-vanguard-beta
 - **Interactive refinement**: include and exclude points for correcting region boundaries.
 - **CPU / GPU selection**: automatic selection, NVIDIA GPU, or CPU execution.
 - **Two SAM 2.1 variants**: Tiny prioritizes speed; Base Plus prioritizes accuracy.
+- **Independent detection settings**: thresholds, recovery parameters, and inference size can apply to the current image or all images.
 - **Independent profiles**: separate mosaic settings for each image and region type.
-- **Masking methods**: pixel mosaics, built-in stickers, and custom stickers.
+- **Preview markers**: optional numbered region markers that are never included in exports.
+- **Masking methods**: pixel mosaics, built-in stickers, and custom stickers; sticker mode does not mix in pixel mosaics.
 - **Batch export**: multi-image processing with ZIP export.
 
 ### Setup
