@@ -1,8 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet("basic", "vanguard")]
-    [string]$Edition = "vanguard",
-    [string]$AppRoot = $PSScriptRoot
+    [string]$Edition = "vanguard"
 )
 
 Set-StrictMode -Version Latest
@@ -43,7 +42,9 @@ try {
         throw "A 64-bit Windows installation is required."
     }
 
-    $appRootPath = [IO.Path]::GetFullPath($AppRoot)
+    # PSScriptRoot is already an absolute filesystem path and avoids command-line
+    # quoting issues caused by a caller passing a directory ending in a backslash.
+    $appRootPath = $PSScriptRoot
     $localAppData = [Environment]::GetFolderPath("LocalApplicationData")
     if ([string]::IsNullOrWhiteSpace($localAppData)) {
         $runtimeRoot = Join-Path $appRootPath ".runtime"

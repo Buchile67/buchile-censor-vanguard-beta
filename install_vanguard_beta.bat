@@ -5,7 +5,7 @@ title Buchile Vanguard Beta Setup
 
 echo [Buchile] First-time setup will prepare a private runtime.
 echo [Buchile] You do not need to install Python or Miniconda yourself.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_runtime.ps1" -Edition vanguard -AppRoot "%~dp0"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0setup_runtime.ps1" -Edition vanguard
 if errorlevel 1 goto failed
 
 echo.
