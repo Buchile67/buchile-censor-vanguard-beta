@@ -8,6 +8,15 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 >
 > This release is still in beta. SAM 2.1 can improve some contours, but results remain dependent on initial detection, image quality, and interactive prompts.
 
+## 版本选择 / Edition guide
+
+[基础版 / Base Edition](https://github.com/Buchile67/buchile-censor) · [先锋版 / Vanguard Beta](https://github.com/Buchile67/buchile-censor-vanguard-beta)
+
+| 版本 / Edition | 主要优势 / Advantages | 适用场景 / Best for |
+| --- | --- | --- |
+| **[基础版 / Base Edition](https://github.com/Buchile67/buchile-censor)** | 环境更轻、启动与批量处理更快；保留轮廓级遮挡、贴图和低阈值补检等核心功能。<br>Lighter runtime and faster startup/batch processing while retaining contour masking, stickers, and low-threshold recovery. | 优先考虑易部署、处理速度和批量工作流。<br>Prioritizing simpler deployment, speed, and batch workflows. |
+| **先锋版 / Vanguard Beta（当前 / Current）** | 增加 SAM 2.1 自动与交互式精修、包含/排除点、CPU/GPU 选择及按图片/区域保存参数。<br>Adds SAM 2.1 automatic and interactive refinement, include/exclude points, CPU/GPU selection, and per-image/per-region profiles. | 对轮廓控制要求更高，并可接受更大的环境和更长的处理时间。<br>Higher contour-control requirements where a larger runtime and longer processing time are acceptable. |
+
 ## 中文
 
 ### 主要功能
