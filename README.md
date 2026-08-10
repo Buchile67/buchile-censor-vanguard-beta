@@ -1,6 +1,6 @@
 # Buchile Vanguard Beta / Buchile 先锋精修版
 
-先锋版在基础版的轮廓检测流程上加入 SAM 2.1，提供自动与交互式轮廓精修。检测、精修和导出均在本地完成，程序不会主动上传输入文件。
+先锋版在基础版的轮廓检测流程上加入 SAM 2.1，提供自动与交互式轮廓精修。检测、精修和导出均在本地完成。
 
 Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for automatic and interactive refinement. Detection, refinement, and export run locally, and the application does not upload input files.
 
@@ -86,7 +86,7 @@ This project is released under GPL-3.0. The SAM 2 submodule and model weights re
 
 本项目按 GPL-3.0 发布；SAM 2 子模块与模型权重仍遵循各自上游许可证及条款。贴图样例由 Buchile 提供。
 
-## Responsible use / 使用边界
+## Responsible use / 使用说明
 
 Only process files you own or are authorized to edit. Do not use this tool for illegal material, non-consensual private material, or any material involving minors.
 
