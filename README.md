@@ -34,10 +34,11 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 - **礼盒小游戏**：页面底部可离线随机领取一张内置猫咪图片。
 
 ### 安装与启动
+方式一：
+一键包：从 [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases) 下载完整包，解压后双击 `start_vanguard_beta.bat`。首次启动会在程序目录中准备独立的 Miniconda 与 `.conda` 环境，不会修改基础版环境。
 
-从 [Releases](https://github.com/Buchile67/buchile-censor-vanguard-beta/releases) 下载完整包，解压后双击 `start_vanguard_beta.bat`。首次启动会在程序目录中准备独立的 Miniconda 与 `.conda` 环境，不会修改基础版环境。
-
-从源码运行：
+方式二：
+从源码运行：（无代码基础不推荐）
 
 ```powershell
 git clone --recurse-submodules https://github.com/Buchile67/buchile-censor-vanguard-beta.git
