@@ -31,6 +31,7 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 - **预览序号**：可在预览中显示区域序号，且不会写入导出文件。
 - **遮挡方式**：支持像素马赛克、内置贴图与自定义贴图；贴图模式不会叠加像素马赛克。
 - **批量导出**：支持多图处理及 ZIP 导出。
+- **礼盒小游戏**：页面底部可离线随机领取一张内置猫咪图片。
 
 ### 安装与启动
 
@@ -59,6 +60,7 @@ cd buchile-censor-vanguard-beta
 - **Preview markers**: optional numbered region markers that are never included in exports.
 - **Masking methods**: pixel mosaics, built-in stickers, and custom stickers; sticker mode does not mix in pixel mosaics.
 - **Batch export**: multi-image processing with ZIP export.
+- **Gift-box mini-game**: receive a randomly selected built-in kitty image offline.
 
 ### Setup
 

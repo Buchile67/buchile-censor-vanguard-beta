@@ -38,12 +38,14 @@ from sam_refine import (
     refine_detections,
     resolve_device,
 )
+from kitty_game import render_kitty_gift_game
 
 
 ROOT = Path(__file__).resolve().parent
 MODEL_DIR = ROOT / "models"
 CHECKPOINT_DIR = ROOT / "checkpoints"
 BRAND_ICON = ROOT / "assets" / "buchile.jpg"
+KITTY_GALLERY_DIR = ROOT / "assets" / "kitty_gallery"
 PIXIV_URL = "https://www.pixiv.net/en/users/118035672"
 GITHUB_PROFILE_URL = "https://github.com/Buchile67"
 BASIC_REPO_URL = "https://github.com/Buchile67/buchile-censor"
@@ -87,6 +89,8 @@ I18N = {
         "project_links": "项目与源代码",
         "acknowledgements": "致谢与参考项目",
         "acknowledgements_intro": "感谢以下开源项目、模型与开发者提供的工作基础：",
+        "gift_prompt": "送你一只小猫咪，点击即送！",
+        "gift_reveal": "收下属于你的可爱耄耋吧！",
         "language": "界面语言 / Language",
         "settings": "打码设置",
         "refinement": "先锋精修",
@@ -207,6 +211,8 @@ I18N = {
         "project_links": "Projects and Source Code",
         "acknowledgements": "Acknowledgements and References",
         "acknowledgements_intro": "Many thanks to the following open-source projects, models, and developers:",
+        "gift_prompt": "A little kitty for you—click to receive!",
+        "gift_reveal": "Take home your very own adorable kitty!",
         "language": "Language / 界面语言",
         "settings": "Censor Settings",
         "refinement": "Vanguard Refinement",
@@ -692,10 +698,14 @@ st.radio(
 )
 
 if not uploaded_files:
+    st.divider()
+    render_kitty_gift_game(KITTY_GALLERY_DIR, tr("gift_prompt"), tr("gift_reveal"))
     st.stop()
 
 if not selected_parts:
     st.warning(tr("select_part_warning"))
+    st.divider()
+    render_kitty_gift_game(KITTY_GALLERY_DIR, tr("gift_prompt"), tr("gift_reveal"))
     st.stop()
 
 preview_index = st.selectbox(
@@ -1090,3 +1100,6 @@ if batch_result and batch_result[0] == batch_signature:
         with st.expander(f"{tr('batch_messages')} ({len(batch_warnings)})"):
             for warning in batch_warnings:
                 st.write(f"- {warning}")
+
+st.divider()
+render_kitty_gift_game(KITTY_GALLERY_DIR, tr("gift_prompt"), tr("gift_reveal"))
