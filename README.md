@@ -1,4 +1,4 @@
-# Buchile Vanguard Beta / Buchile 先锋精修版
+# Buchile Censorship Tool Vanguard Beta / Buchile 打码工具精修先锋版
 
 先锋版在基础版的轮廓检测流程上加入 SAM 2.1，提供自动与交互式轮廓精修。检测、精修和导出均在本地完成。
 
