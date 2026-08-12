@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: transparent; color: inherit; font-family: sans-serif; }
+    .frame { width: 100%; }
+    .image-wrap { position: relative; width: 100%; overflow: hidden; border-radius: 0.5rem; line-height: 0; }
+    img { display: block; width: 100%; height: auto; }
+    .zone { position: absolute; top: 0; bottom: 0; width: 50%; border: 0; padding: 0; background: transparent; opacity: 0; transition: opacity .16s ease, background .16s ease; }
+    .zone::after { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 999px; color: white; background: rgba(15, 23, 42, .62); font-size: 1.7rem; line-height: 1; text-shadow: 0 1px 2px #000; }
+    .zone:hover, .zone:focus-visible { opacity: 1; background: linear-gradient(90deg, rgba(0,0,0,.18), transparent); outline: none; }
+    .previous { left: 0; cursor: w-resize; }
+    .previous::after { content: "\2039"; left: .75rem; }
+    .next { right: 0; cursor: e-resize; }
+    .next::after { content: "\203A"; right: .75rem; }
+    .next:hover, .next:focus-visible { background: linear-gradient(270deg, rgba(0,0,0,.18), transparent); }
+    .zone:disabled { cursor: default; pointer-events: none; }
+    .caption { margin: .45rem .2rem 0; text-align: center; color: #808495; font-size: .875rem; line-height: 1.35; }
+  </style>
+</head>
+<body>
+  <div class="frame" id="frame">
+    <div class="image-wrap">
+      <img id="preview" alt="" />
+      <button id="previous" class="zone previous" type="button"></button>
+      <button id="next" class="zone next" type="button"></button>
+    </div>
+    <div id="caption" class="caption"></div>
+  </div>
+  <script>
+    const send = (type, payload = {}) => window.parent.postMessage({
+      isStreamlitMessage: true,
+      type,
+      ...payload,
+    }, "*");
+
+    const setHeight = () => send("streamlit:setFrameHeight", {
+      height: Math.ceil(document.documentElement.scrollHeight),
+    });
+
+    const choose = (action) => send("streamlit:setComponentValue", {
+      value: { action, nonce: `${Date.now()}-${Math.random()}` },
+    });
+
+    document.getElementById("previous").addEventListener("click", () => choose("previous"));
+    document.getElementById("next").addEventListener("click", () => choose("next"));
+    document.getElementById("preview").addEventListener("load", setHeight);
+    new ResizeObserver(setHeight).observe(document.getElementById("frame"));
+
+    window.addEventListener("message", (event) => {
+      if (event.data?.type !== "streamlit:render") return;
+      const args = event.data.args || {};
+      const image = document.getElementById("preview");
+      if (image.src !== args.image_data_url) image.src = args.image_data_url || "";
+      image.alt = args.caption || "Preview";
+      const previous = document.getElementById("previous");
+      const next = document.getElementById("next");
+      previous.disabled = !args.can_previous;
+      next.disabled = !args.can_next;
+      previous.setAttribute("aria-label", args.previous_label || "Previous image");
+      next.setAttribute("aria-label", args.next_label || "Next image");
+      document.getElementById("caption").textContent = `${args.caption || ""} · ${args.position || 1}/${args.total || 1}`;
+      setHeight();
+    });
+
+    send("streamlit:componentReady", { apiVersion: 1 });
+    setHeight();
+  </script>
+</body>
+</html>

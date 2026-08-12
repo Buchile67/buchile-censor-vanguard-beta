@@ -29,6 +29,8 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 - **独立识别参数**：识别阈值、补检参数和推理尺寸可应用到当前图片或全部图片。
 - **独立参数**：支持按图片、按区域类型保存不同的马赛克设置。
 - **预览序号**：可在预览中显示区域序号，且不会写入导出文件。
+- **快速切图**：点击预览图左右半区，或使用底部按钮切换上一张/下一张图片。
+- **单图交互精修**：可从任意预览结果直接进入交互精修；每张图片的精修模式和提示点都会被记住并用于导出。
 - **遮挡方式**：支持像素马赛克、内置贴图与自定义贴图；贴图模式不会叠加像素马赛克。
 - **批量导出**：支持多图处理及 ZIP 导出。
 - **礼盒小游戏**：页面底部可离线随机领取一张内置猫咪图片。
@@ -63,6 +65,8 @@ cd buchile-censor-vanguard-beta
 - **Independent detection settings**: thresholds, recovery parameters, and inference size can apply to the current image or all images.
 - **Independent profiles**: separate mosaic settings for each image and region type.
 - **Preview markers**: optional numbered region markers that are never included in exports.
+- **Fast preview navigation**: click either half of the preview or use the Previous/Next buttons below it.
+- **Per-image interactive refinement**: enter interactive refinement from any preview; each image keeps its own refinement mode and prompt points for export.
 - **Masking methods**: pixel mosaics, built-in stickers, and custom stickers; sticker mode does not mix in pixel mosaics.
 - **Batch export**: multi-image processing with ZIP export.
 - **Gift-box mini-game**: receive a randomly selected built-in kitty image offline.

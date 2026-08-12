@@ -39,6 +39,7 @@ from sam_refine import (
     resolve_device,
 )
 from kitty_game import render_kitty_gift_game
+from preview_navigation import render_preview_navigator
 
 
 ROOT = Path(__file__).resolve().parent
@@ -185,6 +186,13 @@ I18N = {
         "point_count": "当前区域已有 {count} 个修正点",
         "original": "原图",
         "preview": "精细打码预览",
+        "previous_image": "上一张图片",
+        "next_image": "下一张图片",
+        "preview_position": "第 {current} / {total} 张",
+        "interactive_refine_prompt": "对当前结果不满意？进行{interactive}！",
+        "interactive_refine_word": "交互式精修",
+        "interactive_refine_button": "对当前图片进行交互式精修",
+        "interactive_refine_active": "当前图片的交互式精修已启用；下面的操作和结果会在切换图片后继续保留。",
         "show_region_numbers": "显示识别区域序号",
         "show_region_numbers_help": "红底白字序号仅显示在页面预览中，不会写入下载图片或批量导出结果。",
         "no_detection": "没有找到所选部位。可在左侧把对应部位加入“补检部位”，并降低补检阈值。",
@@ -307,6 +315,13 @@ I18N = {
         "point_count": "This region has {count} correction point(s)",
         "original": "Original",
         "preview": "Precision Censor Preview",
+        "previous_image": "Previous Image",
+        "next_image": "Next Image",
+        "preview_position": "Image {current} of {total}",
+        "interactive_refine_prompt": "Not satisfied with this result? Try {interactive}!",
+        "interactive_refine_word": "interactive refinement",
+        "interactive_refine_button": "Interactively Refine This Image",
+        "interactive_refine_active": "Interactive refinement is active for this image. Its edits and result remain available after switching images.",
         "show_region_numbers": "Show Detected Region Numbers",
         "show_region_numbers_help": "Red numbered markers appear only in the page preview and are never written to downloaded or batch-exported images.",
         "no_detection": "No selected regions were found. Add the region under Recovery Regions and lower the recovery threshold.",
@@ -345,6 +360,16 @@ st.markdown(
     <style>
       .block-container {max-width: 1240px; padding-top: 2rem;}
       [data-testid="stImage"] img {border-radius: 12px;}
+      .interactive-refine-word {
+        color: #ff4b4b;
+        display: inline-block;
+        font-weight: 750;
+        transition: color .16s ease, transform .16s ease;
+      }
+      .interactive-refine-word:hover {
+        color: #ff7373;
+        transform: scale(1.12);
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -415,6 +440,18 @@ def file_key(data: bytes) -> str:
     return hashlib.sha1(data).hexdigest()[:16]
 
 
+def refinement_store() -> dict[str, str]:
+    return st.session_state.setdefault("image_refinement_modes", {})
+
+
+def effective_refine_mode(image_id: str, default_mode: str) -> str:
+    return refinement_store().get(image_id, default_mode)
+
+
+def refinement_state_signature() -> tuple[tuple[str, str], ...]:
+    return tuple(sorted(refinement_store().items()))
+
+
 def points_for_image(data: bytes, detections) -> dict[str, list[tuple[float, float, int]]]:
     store = st.session_state.setdefault("sam_interactive_points", {})
     prefix = file_key(data)
@@ -428,6 +465,22 @@ def points_as_tuple(points: dict[str, list[tuple[float, float, int]]]):
 def upload_key(index: int, filename: str, data: bytes) -> str:
     identity = f"{index}:{filename}:".encode("utf-8") + data
     return hashlib.sha1(identity).hexdigest()[:20]
+
+
+def move_preview(delta: int, total: int) -> None:
+    current = int(st.session_state.get("preview_index", 0))
+    st.session_state["preview_index"] = max(0, min(total - 1, current + delta))
+
+
+def sync_region_number_visibility() -> None:
+    st.session_state["region_numbers_visible"] = bool(
+        st.session_state.get("show_region_numbers", True)
+    )
+
+
+def enable_interactive_refinement(image_id: str) -> None:
+    refinement_store()[image_id] = "interactive"
+    st.session_state.pop("batch_result", None)
 
 
 def detection_store() -> dict:
@@ -571,8 +624,13 @@ def build_zip(
                 chosen = detections_for_parts(detections, selected_parts)
                 if not chosen:
                     warnings.append(tr("batch_not_found", name=uploaded.name))
-                if refine_mode != "original" and chosen:
-                    saved_points = points_for_image(data, chosen) if refine_mode == "interactive" else {}
+                image_refine_mode = effective_refine_mode(image_id, refine_mode)
+                if image_refine_mode != "original" and chosen:
+                    saved_points = (
+                        points_for_image(data, chosen)
+                        if image_refine_mode == "interactive"
+                        else {}
+                    )
                     chosen, _ = run_refinement(
                         data,
                         tuple(item.uid for item in chosen),
@@ -708,10 +766,19 @@ if not selected_parts:
     render_kitty_gift_game(KITTY_GALLERY_DIR, tr("gift_prompt"), tr("gift_reveal"))
     st.stop()
 
+pending_preview_index = st.session_state.pop("_pending_preview_index", None)
+if pending_preview_index is not None:
+    st.session_state["preview_index"] = max(
+        0, min(len(uploaded_files) - 1, int(pending_preview_index))
+    )
+elif not 0 <= int(st.session_state.get("preview_index", 0)) < len(uploaded_files):
+    st.session_state["preview_index"] = 0
+
 preview_index = st.selectbox(
     tr("preview_file"),
     options=list(range(len(uploaded_files))),
     format_func=lambda index: f"{index + 1}. {uploaded_files[index].name}",
+    key="preview_index",
 )
 current_file = uploaded_files[preview_index]
 current_data = current_file.getvalue()
@@ -937,8 +1004,121 @@ selected_region_labels = st.multiselect(
 selected_ids = {label_to_id[label] for label in selected_region_labels}
 selected_detections = [item for item in candidate_detections if item.uid in selected_ids]
 
-interactive_points = {}
-if refine_mode == "interactive" and selected_detections:
+current_refine_mode = effective_refine_mode(current_image_id, refine_mode)
+interactive_points = (
+    points_for_image(current_data, selected_detections)
+    if current_refine_mode == "interactive"
+    else {}
+)
+
+diagnostics = []
+if current_refine_mode == "original" or not selected_detections:
+    output_detections = selected_detections
+else:
+    with st.spinner(tr("refining")):
+        output_detections, diagnostics = run_refinement(
+            current_data,
+            tuple(item.uid for item in selected_detections),
+            sam_variant,
+            device,
+            points_as_tuple(interactive_points),
+            selected_detections,
+        )
+
+processed_preview = apply_profiled_censor(
+    current_image,
+    output_detections,
+    effective_mosaic_profiles(current_image_id),
+)
+
+st.session_state.setdefault("region_numbers_visible", True)
+st.session_state["show_region_numbers"] = st.session_state["region_numbers_visible"]
+show_region_numbers = st.toggle(
+    tr("show_region_numbers"),
+    help=tr("show_region_numbers_help"),
+    key="show_region_numbers",
+    on_change=sync_region_number_visibility,
+)
+display_original = (
+    draw_detection_markers(current_image, candidate_detections)
+    if show_region_numbers
+    else current_image
+)
+display_preview = (
+    draw_detection_markers(processed_preview, candidate_detections)
+    if show_region_numbers
+    else processed_preview
+)
+
+left, right = st.columns(2, gap="medium")
+with left:
+    st.image(display_original, caption=tr("original"), use_container_width=True)
+with right:
+    preview_action = render_preview_navigator(
+        display_preview,
+        caption=tr("preview"),
+        previous_label=tr("previous_image"),
+        next_label=tr("next_image"),
+        can_previous=preview_index > 0,
+        can_next=preview_index < len(uploaded_files) - 1,
+        position=preview_index + 1,
+        total=len(uploaded_files),
+        key="vanguard_preview_navigator",
+    )
+
+if preview_action:
+    offset = -1 if preview_action == "previous" else 1
+    st.session_state["_pending_preview_index"] = max(
+        0, min(len(uploaded_files) - 1, preview_index + offset)
+    )
+    st.rerun()
+
+previous_column, position_column, next_column = st.columns([1, 1.2, 1])
+with previous_column:
+    st.button(
+        f"← {tr('previous_image')}",
+        disabled=preview_index == 0,
+        on_click=move_preview,
+        args=(-1, len(uploaded_files)),
+        key="preview_previous_button",
+        use_container_width=True,
+    )
+with position_column:
+    st.markdown(
+        f"<p style='text-align:center;margin:.45rem 0 0;color:#8b91a1'>"
+        f"{tr('preview_position', current=preview_index + 1, total=len(uploaded_files))}</p>",
+        unsafe_allow_html=True,
+    )
+with next_column:
+    st.button(
+        f"{tr('next_image')} →",
+        disabled=preview_index == len(uploaded_files) - 1,
+        on_click=move_preview,
+        args=(1, len(uploaded_files)),
+        key="preview_next_button",
+        use_container_width=True,
+    )
+
+interactive_word = (
+    f"<span class='interactive-refine-word'>{tr('interactive_refine_word')}</span>"
+)
+st.markdown(
+    f"<p style='text-align:center;margin:1rem 0 .35rem'>"
+    f"{tr('interactive_refine_prompt', interactive=interactive_word)}</p>",
+    unsafe_allow_html=True,
+)
+st.button(
+    tr("interactive_refine_button"),
+    type="primary" if current_refine_mode != "interactive" else "secondary",
+    disabled=current_refine_mode == "interactive",
+    on_click=enable_interactive_refinement,
+    args=(current_image_id,),
+    key=f"enable_interactive_{current_image_id}",
+    use_container_width=True,
+)
+
+if current_refine_mode == "interactive" and selected_detections:
+    st.caption(tr("interactive_refine_active"))
     st.subheader(tr("interaction_title"))
     target_uid = st.selectbox(
         tr("interaction_target"),
@@ -948,6 +1128,7 @@ if refine_mode == "interactive" and selected_detections:
             for index, item in enumerate(candidate_detections)
             if item.uid == uid
         ),
+        key=f"interaction_target_{current_image_id}",
     )
     target = next(item for item in selected_detections if item.uid == target_uid)
     point_kind = st.radio(
@@ -955,6 +1136,7 @@ if refine_mode == "interactive" and selected_detections:
         [1, 0],
         horizontal=True,
         format_func=lambda value: tr("positive") if value == 1 else tr("negative"),
+        key=f"interaction_point_type_{current_image_id}",
     )
     store = st.session_state.setdefault("sam_interactive_points", {})
     store_key = f"{file_key(current_data)}:{target_uid}"
@@ -975,60 +1157,30 @@ if refine_mode == "interactive" and selected_detections:
             int(point_kind),
         )
         store[store_key] = current_points + [new_point]
+        st.session_state.pop("batch_result", None)
         st.rerun()
     undo_column, clear_column = st.columns(2)
     with undo_column:
-        if st.button(tr("undo"), disabled=not current_points, use_container_width=True):
+        if st.button(
+            tr("undo"),
+            disabled=not current_points,
+            key=f"interaction_undo_{store_key}",
+            use_container_width=True,
+        ):
             store[store_key] = current_points[:-1]
+            st.session_state.pop("batch_result", None)
             st.rerun()
     with clear_column:
-        if st.button(tr("clear"), disabled=not current_points, use_container_width=True):
+        if st.button(
+            tr("clear"),
+            disabled=not current_points,
+            key=f"interaction_clear_{store_key}",
+            use_container_width=True,
+        ):
             store.pop(store_key, None)
+            st.session_state.pop("batch_result", None)
             st.rerun()
     st.caption(tr("point_count", count=len(current_points)))
-    interactive_points = points_for_image(current_data, selected_detections)
-
-diagnostics = []
-if refine_mode == "original" or not selected_detections:
-    output_detections = selected_detections
-else:
-    with st.spinner(tr("refining")):
-        output_detections, diagnostics = run_refinement(
-            current_data,
-            tuple(item.uid for item in selected_detections),
-            sam_variant,
-            device,
-            points_as_tuple(interactive_points),
-            selected_detections,
-        )
-
-processed_preview = apply_profiled_censor(
-    current_image,
-    output_detections,
-    effective_mosaic_profiles(current_image_id),
-)
-
-show_region_numbers = st.toggle(
-    tr("show_region_numbers"),
-    value=True,
-    help=tr("show_region_numbers_help"),
-)
-display_original = (
-    draw_detection_markers(current_image, candidate_detections)
-    if show_region_numbers
-    else current_image
-)
-display_preview = (
-    draw_detection_markers(processed_preview, candidate_detections)
-    if show_region_numbers
-    else processed_preview
-)
-
-left, right = st.columns(2, gap="medium")
-with left:
-    st.image(display_original, caption=tr("original"), use_container_width=True)
-with right:
-    st.image(display_preview, caption=tr("preview"), use_container_width=True)
 
 if not candidate_detections:
     st.warning(tr("no_detection"))
@@ -1068,6 +1220,7 @@ batch_signature = hashlib.sha1(
             detection_state_signature(),
             output_format,
             refine_mode,
+            refinement_state_signature(),
             sam_variant,
             repr(st.session_state.get("sam_interactive_points", {})),
             mosaic_state_signature(),
