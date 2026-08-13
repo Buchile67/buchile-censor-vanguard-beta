@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: transparent; color: inherit; font-family: sans-serif; }
+    .line { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; min-height: 2.6rem; font-size: 1rem; font-weight: 650; line-height: 1.5; }
+    .entry { border: 0; margin: 0 .15rem; padding: .1rem .12rem; color: #ff4b4b; background: transparent; font: inherit; font-weight: 800; cursor: pointer; transition: color .16s ease, transform .16s ease, text-shadow .16s ease; }
+    .entry:hover, .entry:focus-visible { color: #ff7373; transform: scale(1.14); text-shadow: 0 0 .7rem rgba(255, 75, 75, .35); outline: none; }
+    .entry.active::after { content: " \2713"; font-size: .85em; }
+    .hint { width: 100%; margin-top: .1rem; text-align: center; color: #8b91a1; font-size: .8rem; font-weight: 450; }
+  </style>
+</head>
+<body>
+  <div class="line" id="line">
+    <span id="prefix"></span>
+    <button id="entry" class="entry" type="button"></button>
+    <span id="suffix"></span>
+    <div id="hint" class="hint" hidden></div>
+  </div>
+  <script>
+    const send = (type, payload = {}) => window.parent.postMessage({
+      isStreamlitMessage: true,
+      type,
+      ...payload,
+    }, "*");
+    const setHeight = () => send("streamlit:setFrameHeight", {
+      height: Math.ceil(document.documentElement.scrollHeight),
+    });
+    document.getElementById("entry").addEventListener("click", () => send(
+      "streamlit:setComponentValue",
+      { value: { action: "open", nonce: `${Date.now()}-${Math.random()}` } },
+    ));
+    new ResizeObserver(setHeight).observe(document.getElementById("line"));
+    window.addEventListener("message", (event) => {
+      if (event.data?.type !== "streamlit:render") return;
+      const args = event.data.args || {};
+      document.getElementById("prefix").textContent = args.prefix || "";
+      document.getElementById("suffix").textContent = args.suffix || "";
+      const entry = document.getElementById("entry");
+      entry.textContent = args.label || "Interactive refinement";
+      entry.setAttribute("aria-label", args.label || "Interactive refinement");
+      entry.classList.toggle("active", Boolean(args.active));
+      const hint = document.getElementById("hint");
+      hint.textContent = args.active_hint || "";
+      hint.hidden = !args.active || !args.active_hint;
+      setHeight();
+    });
+    send("streamlit:componentReady", { apiVersion: 1 });
+    setHeight();
+  </script>
+</body>
+</html>

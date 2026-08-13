@@ -40,6 +40,7 @@ from sam_refine import (
 )
 from kitty_game import render_kitty_gift_game
 from preview_navigation import render_preview_navigator
+from refine_entry import render_refine_entry
 
 
 ROOT = Path(__file__).resolve().parent
@@ -169,6 +170,8 @@ I18N = {
         "license_description": "本工具按 GPL-3.0 发布，不提供任何担保；模型权利归各自作者所有。",
         "upload": "上传一张或多张图片",
         "upload_help": "可一次选择多张图片。每张图片可保存独立的分区域马赛克参数，批量导出会逐张保留这些状态。",
+        "initial_parts_guide": "第一步：请先在左侧选择部位预设，并在“需要打码的部位”中确认或增删目标；第二步：再上传图片开始识别。",
+        "sidebar_parts_guide": "先选择预设，再检查下方部位列表；只有选中的部位会进入识别与打码流程。",
         "select_part_warning": "请至少选择一个需要打码的部位。",
         "preview_file": "当前预览图片",
         "detecting": "正在进行轮廓级检测…",
@@ -189,10 +192,13 @@ I18N = {
         "previous_image": "上一张图片",
         "next_image": "下一张图片",
         "preview_position": "第 {current} / {total} 张",
-        "interactive_refine_prompt": "对当前结果不满意？进行{interactive}！",
+        "interactive_refine_prefix": "对当前结果不满意？进行",
         "interactive_refine_word": "交互式精修",
-        "interactive_refine_button": "对当前图片进行交互式精修",
+        "interactive_refine_suffix": "！",
+        "interactive_refine_entry_hint": "已进入当前图片的交互式精修",
         "interactive_refine_active": "当前图片的交互式精修已启用；下面的操作和结果会在切换图片后继续保留。",
+        "interactive_no_detection": "当前所选部位没有可精修的检测区域。请先在左侧确认“需要打码的部位”；若仍未识别到，请展开“识别阈值与精度”，把对应部位加入“补检部位”、降低补检阈值，并点击“仅应用到当前图片”。",
+        "interactive_no_selection": "已经识别到区域，但当前没有选中精修目标。请在上方“选择当前图片中需要遮挡的具体区域”中至少选择一项。",
         "show_region_numbers": "显示识别区域序号",
         "show_region_numbers_help": "红底白字序号仅显示在页面预览中，不会写入下载图片或批量导出结果。",
         "no_detection": "没有找到所选部位。可在左侧把对应部位加入“补检部位”，并降低补检阈值。",
@@ -298,6 +304,8 @@ I18N = {
         "license_description": "Released under GPL-3.0 without warranty. Model rights remain with their respective authors.",
         "upload": "Upload One or More Images",
         "upload_help": "Upload multiple images at once. Each image can save independent mosaic parameters for every sensitive-region type.",
+        "initial_parts_guide": "Step 1: choose a region preset in the sidebar and confirm the targets under Regions to Censor. Step 2: upload images to begin detection.",
+        "sidebar_parts_guide": "Choose a preset, then review the list below. Only selected region types enter detection and censoring.",
         "select_part_warning": "Select at least one region to censor.",
         "preview_file": "Preview Image",
         "detecting": "Detecting precise contours…",
@@ -318,10 +326,13 @@ I18N = {
         "previous_image": "Previous Image",
         "next_image": "Next Image",
         "preview_position": "Image {current} of {total}",
-        "interactive_refine_prompt": "Not satisfied with this result? Try {interactive}!",
+        "interactive_refine_prefix": "Not satisfied with this result? Try ",
         "interactive_refine_word": "interactive refinement",
-        "interactive_refine_button": "Interactively Refine This Image",
+        "interactive_refine_suffix": "!",
+        "interactive_refine_entry_hint": "Interactive refinement is open for this image",
         "interactive_refine_active": "Interactive refinement is active for this image. Its edits and result remain available after switching images.",
+        "interactive_no_detection": "No editable detection was found for the selected region types. Confirm Regions to Censor in the sidebar. If the target is still missing, open Detection Threshold and Resolution, add the region under Recovery Regions, lower its threshold, and click Apply to Current Image Only.",
+        "interactive_no_selection": "Regions were detected, but none is selected for refinement. Select at least one item under Select Specific Regions to Censor in This Image above.",
         "show_region_numbers": "Show Detected Region Numbers",
         "show_region_numbers_help": "Red numbered markers appear only in the page preview and are never written to downloaded or batch-exported images.",
         "no_detection": "No selected regions were found. Add the region under Recovery Regions and lower the recovery threshold.",
@@ -360,16 +371,6 @@ st.markdown(
     <style>
       .block-container {max-width: 1240px; padding-top: 2rem;}
       [data-testid="stImage"] img {border-radius: 12px;}
-      .interactive-refine-word {
-        color: #ff4b4b;
-        display: inline-block;
-        font-weight: 750;
-        transition: color .16s ease, transform .16s ease;
-      }
-      .interactive-refine-word:hover {
-        color: #ff7373;
-        transform: scale(1.12);
-      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -724,6 +725,7 @@ with st.sidebar:
         index=0,
         format_func=lambda value: tr(f"preset_{value}"),
     )
+    st.caption(tr("sidebar_parts_guide"))
     selected_parts = st.multiselect(
         tr("selected_parts"),
         options=PARTS,
@@ -740,6 +742,7 @@ with st.sidebar:
         st.caption(tr("license_description"))
 
 
+st.info(tr("initial_parts_guide"), icon="👈")
 uploaded_files = st.file_uploader(
     tr("upload"),
     type=["png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"],
@@ -1099,27 +1102,26 @@ with next_column:
         use_container_width=True,
     )
 
-interactive_word = (
-    f"<span class='interactive-refine-word'>{tr('interactive_refine_word')}</span>"
+refine_entry_clicked = render_refine_entry(
+    prefix=tr("interactive_refine_prefix"),
+    label=tr("interactive_refine_word"),
+    suffix=tr("interactive_refine_suffix"),
+    active=current_refine_mode == "interactive",
+    active_hint=tr("interactive_refine_entry_hint"),
+    key=f"interactive_refine_entry_{current_image_id}",
 )
-st.markdown(
-    f"<p style='text-align:center;margin:1rem 0 .35rem'>"
-    f"{tr('interactive_refine_prompt', interactive=interactive_word)}</p>",
-    unsafe_allow_html=True,
-)
-st.button(
-    tr("interactive_refine_button"),
-    type="primary" if current_refine_mode != "interactive" else "secondary",
-    disabled=current_refine_mode == "interactive",
-    on_click=enable_interactive_refinement,
-    args=(current_image_id,),
-    key=f"enable_interactive_{current_image_id}",
-    use_container_width=True,
-)
+if refine_entry_clicked:
+    enable_interactive_refinement(current_image_id)
+    st.rerun()
 
-if current_refine_mode == "interactive" and selected_detections:
+if current_refine_mode == "interactive":
     st.caption(tr("interactive_refine_active"))
     st.subheader(tr("interaction_title"))
+if current_refine_mode == "interactive" and not candidate_detections:
+    st.warning(tr("interactive_no_detection"), icon="🧭")
+elif current_refine_mode == "interactive" and not selected_detections:
+    st.warning(tr("interactive_no_selection"), icon="🧭")
+elif current_refine_mode == "interactive":
     target_uid = st.selectbox(
         tr("interaction_target"),
         options=[item.uid for item in selected_detections],
@@ -1182,7 +1184,7 @@ if current_refine_mode == "interactive" and selected_detections:
             st.rerun()
     st.caption(tr("point_count", count=len(current_points)))
 
-if not candidate_detections:
+if not candidate_detections and current_refine_mode != "interactive":
     st.warning(tr("no_detection"))
 if diagnostics:
     with st.expander(tr("diagnostics")):

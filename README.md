@@ -23,7 +23,7 @@ Vanguard Beta extends the base contour-detection workflow with SAM 2.1 for autom
 
 - **原始轮廓**：使用基础版双模型分割结果，处理速度最快。
 - **全自动精修**：由检测模型定位区域，再使用 SAM 2.1 细化轮廓。
-- **交互式精修**：通过包含点和排除点修正目标边界。
+- **交互式精修**：点击预览图下方的红色“交互式精修”文字即可进入；通过包含点和排除点修正目标边界。即使当前没有检测到可编辑区域，页面也会打开精修区并给出补检指引。
 - **CPU / GPU 选择**：支持自动选择、NVIDIA GPU 或 CPU 运行。
 - **两种 SAM 2.1 模型**：Tiny 侧重速度，Base Plus 侧重精度。
 - **独立识别参数**：识别阈值、补检参数和推理尺寸可应用到当前图片或全部图片。
@@ -66,7 +66,7 @@ cd buchile-censor-vanguard-beta
 - **Independent profiles**: separate mosaic settings for each image and region type.
 - **Preview markers**: optional numbered region markers that are never included in exports.
 - **Fast preview navigation**: click either half of the preview or use the Previous/Next buttons below it.
-- **Per-image interactive refinement**: enter interactive refinement from any preview; each image keeps its own refinement mode and prompt points for export.
+- **Per-image interactive refinement**: click the red “interactive refinement” text below a preview to enter. Each image keeps its own refinement mode and prompt points for export; when no editable target is detected, the refinement section opens with recovery guidance.
 - **Masking methods**: pixel mosaics, built-in stickers, and custom stickers; sticker mode does not mix in pixel mosaics.
 - **Batch export**: multi-image processing with ZIP export.
 - **Gift-box mini-game**: receive a randomly selected built-in kitty image offline.
