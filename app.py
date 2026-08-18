@@ -41,6 +41,12 @@ from sam_refine import (
 from kitty_game import render_kitty_gift_game
 from preview_navigation import render_preview_navigator
 from refine_entry import render_refine_entry
+from region_selection import (
+    effective_selected_ids,
+    region_selection_key,
+    region_selection_signature,
+    save_selected_ids,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -479,6 +485,24 @@ def sync_region_number_visibility() -> None:
     )
 
 
+def region_selection_store() -> dict[str, tuple[str, ...]]:
+    return st.session_state.setdefault("image_region_selections", {})
+
+
+def sync_region_selection(
+    selection_key: str,
+    widget_key: str,
+    label_to_id: dict[str, str],
+) -> None:
+    selected_labels = st.session_state.get(widget_key, [])
+    save_selected_ids(
+        region_selection_store(),
+        selection_key,
+        (label_to_id[label] for label in selected_labels if label in label_to_id),
+    )
+    st.session_state.pop("batch_result", None)
+
+
 def enable_interactive_refinement(image_id: str) -> None:
     refinement_store()[image_id] = "interactive"
     st.session_state.pop("batch_result", None)
@@ -623,6 +647,15 @@ def build_zip(
                 }
                 detections = run_detection(data, **detection_settings)
                 chosen = detections_for_parts(detections, selected_parts)
+                selection_key = region_selection_key(
+                    image_id, selected_parts, detection_settings
+                )
+                selected_ids = effective_selected_ids(
+                    region_selection_store(),
+                    selection_key,
+                    (item.uid for item in chosen),
+                )
+                chosen = [item for item in chosen if item.uid in selected_ids]
                 if not chosen:
                     warnings.append(tr("batch_not_found", name=uploaded.name))
                 image_refine_mode = effective_refine_mode(image_id, refine_mode)
@@ -993,16 +1026,26 @@ with st.spinner(tr("detecting")):
 candidate_detections = detections_for_parts(detections, selected_parts)
 label_to_id = {region_label(index, item): item.uid for index, item in enumerate(candidate_detections)}
 region_labels = list(label_to_id)
-preview_key = hashlib.sha1(
-    current_data
-    + repr((selected_parts, detection_settings)).encode("utf-8")
-).hexdigest()[:12]
+current_selection_key = region_selection_key(
+    current_image_id, selected_parts, detection_settings
+)
+saved_selected_ids = effective_selected_ids(
+    region_selection_store(),
+    current_selection_key,
+    (item.uid for item in candidate_detections),
+)
+default_region_labels = [
+    label for label, uid in label_to_id.items() if uid in saved_selected_ids
+]
+region_widget_key = f"regions_{language}_{current_selection_key}"
 selected_region_labels = st.multiselect(
     tr("select_regions"),
     options=region_labels,
-    default=region_labels,
-    key=f"regions_{language}_{preview_key}",
+    default=default_region_labels,
+    key=region_widget_key,
     help=tr("select_regions_help"),
+    on_change=sync_region_selection,
+    args=(current_selection_key, region_widget_key, label_to_id),
 )
 selected_ids = {label_to_id[label] for label in selected_region_labels}
 selected_detections = [item for item in candidate_detections if item.uid in selected_ids]
@@ -1220,6 +1263,7 @@ batch_signature = hashlib.sha1(
             [(item.name, len(item.getvalue())) for item in uploaded_files],
             selected_parts,
             detection_state_signature(),
+            region_selection_signature(region_selection_store()),
             output_format,
             refine_mode,
             refinement_state_signature(),
